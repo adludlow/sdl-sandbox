@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string>
 
+#include "Texture.h"
+
 const int WORLD_WIDTH = 1280;
 const int WORLD_HEIGHT = 960;
 
@@ -75,6 +77,10 @@ SDL_Texture* loadTexture( std::string path );
 SDL_Window* gWindow = NULL;
 
 SDL_Renderer* gRenderer = NULL;
+
+Texture foregroundTexture;
+Texture backgroundTexture;
+
 SDL_Texture* gTexture = NULL;
 
 SDL_Surface* gScreenSurface = NULL;
@@ -166,18 +172,23 @@ bool init() {
 
 bool loadMedia() {
   bool success = true;
-  gTexture = loadTexture( "images/magpie.jpg");
-  if( gTexture == NULL ) {
-    printf( "Failed to load Texture image.\n" );
+
+  if( !foregroundTexture.loadFromFile( "images/rocket.png", gRenderer )) {
+    printf( "Failed to load texture image.\n" );
     success = false;
   }
+
+  if( !backgroundTexture.loadFromFile( "images/saturn.jpg", gRenderer )) {
+    printf( "Failed to load background image.\n" );
+    success = false;
+  }
+
   return success;
 }
 
 void close() {
-  
-  SDL_DestroyTexture( gTexture );
-  gTexture = NULL;
+  foregroundTexture.free();
+  backgroundTexture.free();
 
   SDL_DestroyRenderer( gRenderer );
   SDL_DestroyWindow( gWindow );
@@ -205,17 +216,11 @@ int main( int argc, char* args[] ) {
           } 
        }
 
-      SDL_Rect topLeftViewport = { 0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
-      SDL_RenderSetViewport( gRenderer, &topLeftViewport );
-      SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
+      SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+      SDL_RenderClear( gRenderer );
 
-      SDL_Rect topRightViewport = { SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
-      SDL_RenderSetViewport( gRenderer, &topRightViewport );
-      SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
-
-      SDL_Rect bottomViewport = { 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2 };
-      SDL_RenderSetViewport( gRenderer, &bottomViewport );
-      SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
+      backgroundTexture.render( 0, 0, gRenderer );
+      foregroundTexture.render( 240, 190, gRenderer );
 
       SDL_RenderPresent( gRenderer );
 
