@@ -86,11 +86,11 @@ SDL_Texture* loadTexture( std::string path ) {
 
   SDL_Surface* loadedSurface = IMG_Load( path.c_str() );
   if( loadedSurface == NULL ) {
-    printf( "Unable to load image%s. SDL_Image Error: %s\n", path.c_str(), IMG_GetError() );
+    printf( "Unable to load image %s. SDL_Image Error: %s\n", path.c_str(), IMG_GetError() );
   } else {
     newTexture = SDL_CreateTextureFromSurface( gRenderer, loadedSurface );
     if( newTexture == NULL ) {
-      printf( "Unable to create texture frm %s. SDL Error: %s\n", path.c_str(), IMG_GetError() );
+      printf( "Unable to create texture from %s. SDL Error: %s\n", path.c_str(), IMG_GetError() );
     } else {
       SDL_FreeSurface( loadedSurface );
     }
@@ -166,7 +166,11 @@ bool init() {
 
 bool loadMedia() {
   bool success = true;
-
+  gTexture = loadTexture( "images/magpie.jpg");
+  if( gTexture == NULL ) {
+    printf( "Failed to load Texture image.\n" );
+    success = false;
+  }
   return success;
 }
 
@@ -201,19 +205,19 @@ int main( int argc, char* args[] ) {
           } 
        }
 
-        SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-        SDL_RenderClear( gRenderer );
+      SDL_Rect topLeftViewport = { 0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+      SDL_RenderSetViewport( gRenderer, &topLeftViewport );
+      SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
 
-        // Render shapes
-        SDL_Rect fillRect = { SCREEN_WIDTH/4, SCREEN_HEIGHT/4, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 };
-        SDL_SetRenderDrawColor( gRenderer, 0xFF, 0x00, 0x00, 0xFF );
-        SDL_RenderFillRect( gRenderer, &fillRect );
+      SDL_Rect topRightViewport = { SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+      SDL_RenderSetViewport( gRenderer, &topRightViewport );
+      SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
 
-        SDL_Rect outlineRect = { SCREEN_WIDTH/6, SCREEN_HEIGHT/6, SCREEN_WIDTH*2/3, SCREEN_HEIGHT*2/3 };
-        SDL_SetRenderDrawColor( gRenderer, 0x00, 0xFF, 0x00, 0xFF );
-        SDL_RenderDrawRect( gRenderer, &outlineRect );
+      SDL_Rect bottomViewport = { 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2 };
+      SDL_RenderSetViewport( gRenderer, &bottomViewport );
+      SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
 
-        SDL_RenderPresent( gRenderer );
+      SDL_RenderPresent( gRenderer );
 
      }
     }
