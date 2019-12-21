@@ -167,40 +167,11 @@ bool init() {
 bool loadMedia() {
   bool success = true;
 
-  /*gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] = loadSurface( "images/press.bmp" );
-  if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ] == NULL ) {
-    success = false;
-  }
-  gKeyPressSurfaces[ KEY_PRESS_SURFACE_UP ] = loadSurface( "images/up.bmp" );
-  if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_UP ] == NULL ) {
-    success = false;
-  }
-  gKeyPressSurfaces[ KEY_PRESS_SURFACE_DOWN ] = loadSurface( "images/down.bmp" );
-  if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_DOWN ] == NULL ) {
-    success = false;
-  }
-  gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ] = loadSurface( "images/left.bmp" );
-  if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ] == NULL ) {
-    success = false;
-  }
-  gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ] = loadSurface( "images/right.bmp" );
-  if( gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ] == NULL ) {
-    success = false;
-  }*/
-  gTexture = loadTexture( "images/texture.png" );
-  if( gTexture == NULL ) {
-    printf( "Failed to load texture image.\n" );
-    success = false;
-  }
-
   return success;
 }
 
 void close() {
-  /*for( int i = 0; i < KEY_PRESS_SURFACE_TOTAL; i++ ) {
-    SDL_FreeSurface( gKeyPressSurfaces[ i ] );
-    gKeyPressSurfaces[ i ] = NULL;
-  }*/
+  
   SDL_DestroyTexture( gTexture );
   gTexture = NULL;
 
@@ -228,44 +199,23 @@ int main( int argc, char* args[] ) {
           if( e.type == SDL_QUIT ) {
             quit = true;
           } 
-          /*else if( e.type == SDL_KEYDOWN ) {
-            switch( e.key.keysym.sym ) {
-              case SDLK_UP:
-                gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_UP ];
-                break;
+       }
 
-              case SDLK_DOWN:
-                gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DOWN ];
-                break;
-
-              case SDLK_LEFT:
-                gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ];
-                break;
-
-              case SDLK_RIGHT:
-                gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ];
-                break;
-
-              default:
-                gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ];
-                break;
-
-            }
-          }*/
-        }
-
+        SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
         SDL_RenderClear( gRenderer );
-        SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
+
+        // Render shapes
+        SDL_Rect fillRect = { SCREEN_WIDTH/4, SCREEN_HEIGHT/4, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 };
+        SDL_SetRenderDrawColor( gRenderer, 0xFF, 0x00, 0x00, 0xFF );
+        SDL_RenderFillRect( gRenderer, &fillRect );
+
+        SDL_Rect outlineRect = { SCREEN_WIDTH/6, SCREEN_HEIGHT/6, SCREEN_WIDTH*2/3, SCREEN_HEIGHT*2/3 };
+        SDL_SetRenderDrawColor( gRenderer, 0x00, 0xFF, 0x00, 0xFF );
+        SDL_RenderDrawRect( gRenderer, &outlineRect );
+
         SDL_RenderPresent( gRenderer );
 
-        /*SDL_Rect stretchRect;
-        stretchRect.x = 0;
-        stretchRect.y = 0;
-        stretchRect.w = SCREEN_WIDTH;
-        stretchRect.h = SCREEN_HEIGHT;
-        SDL_BlitScaled( gCurrentSurface, NULL, gScreenSurface, &stretchRect );
-        SDL_UpdateWindowSurface( gWindow );*/
-      }
+     }
     }
   }
   close();
