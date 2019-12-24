@@ -47,9 +47,19 @@ void Texture::free() {
   }
 }
 
-void Texture::render( int x, int y, SDL_Renderer* renderer ) {
+void Texture::render( int x, int y, SDL_Renderer* renderer, SDL_Rect* clip ) {
   SDL_Rect renderQuad = { x, y, width, height };
-  SDL_RenderCopy( renderer, texture, NULL, &renderQuad );
+
+  if( clip != NULL ) {
+    renderQuad.w = clip->w;
+    renderQuad.h = clip->h;
+  }
+
+  SDL_RenderCopy( renderer, texture, clip, &renderQuad );
+}
+
+void Texture::setColour( Uint8 red, Uint8 green, Uint8 blue ) {
+  SDL_SetTextureColorMod( texture, red, green, blue );
 }
 
 int Texture::getWidth() {
