@@ -11,7 +11,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 include_directories(/usr/include/SDL2)
 
-add_executable(sdlSandbox src/main.cpp src/Texture.cpp src/Point.cpp src/Polygon.cpp )
+add_executable(sdlSandbox src/main.cpp src/Texture.cpp src/Polygon.cpp )
 target_link_libraries(sdlSandbox /usr/lib/libSDL2.so /usr/lib/libSDL2_image.so)
 install(TARGETS sdlSandbox RUNTIME DESTINATION ${BIN_DIR})
 file(COPY images DESTINATION .)

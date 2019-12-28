@@ -55,14 +55,14 @@ int main( int argc, char* args[] ) {
     bool quit = false;
     SDL_Event e;
 
-    std::vector<Point> _points = { 
-      Point( SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 ),
-      Point( SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 20 ),
-      Point( SCREEN_WIDTH / 2 + 10, SCREEN_HEIGHT / 2 ),
-      Point( SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 )
+    std::vector<Point> points = { 
+      { SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 },
+      { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 20 },
+      { SCREEN_WIDTH / 2 + 10, SCREEN_HEIGHT / 2 },
+      { SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 }
     };
 
-    Polygon triangle = Polygon( _points );
+    Polygon triangle = Polygon( points );
 
     double angle = 0.0;
     double angleDelta = 0.1;

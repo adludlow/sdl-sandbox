@@ -26,7 +26,7 @@ void Polygon::render( SDL_Renderer* renderer ) {
     points.end(),
     sdlPoints.begin(),
     []( Point p ) -> SDL_Point {
-      return { round(p.getX()), round(p.getY()) };
+      return { round(p.x), round(p.y) };
     }
   );
 
@@ -42,7 +42,7 @@ void Polygon::rotate2D( double angle ) {
 
   polygon_t poly;
   for( unsigned int i = 0; i < points.size(); i++ ) {
-    poly.outer().push_back( point_t(points[i].getX(), points[i].getY()));
+    poly.outer().push_back( point_t(points[i].x, points[i].y));
   }
   geom::correct( poly );
 
@@ -72,7 +72,7 @@ void Polygon::rotate2D( double angle ) {
   std::vector<Point> newPoints;
   for( unsigned int i = 0; i < result.outer().size(); i++ ) {
     newPoints.push_back(
-      Point( result.outer()[i].get<0>(), result.outer()[i].get<1>() )
+      { result.outer()[i].get<0>(), result.outer()[i].get<1>() }
     );
   }
   points = newPoints;
