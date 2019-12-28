@@ -1,8 +1,11 @@
 #include <SDL.h>
 #include <chrono>
 #include <thread>
+#include <algorithm>
+#include <iostream>
 
-#include "Polygon.h"
+#include "MovingPolygon.h"
+#include "transform.h"
 
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 960;
@@ -48,6 +51,21 @@ void close() {
   SDL_Quit();
 }
 
+void render( SDL_Renderer* renderer, Polygon poly ) {
+  std::vector<SDL_Point> sdlPoints;
+  sdlPoints.resize(poly.points.size());
+  std::transform(
+    poly.points.begin(),
+    poly.points.end(),
+    sdlPoints.begin(),
+    []( Point p ) -> SDL_Point {
+      return { round(p.x), round(p.y) };
+    }
+  );
+
+  SDL_RenderDrawLines( renderer, sdlPoints.data(), sdlPoints.size() );
+}
+
 int main( int argc, char* args[] ) {
   if( !init() ) {
     printf( "Failed to initialise.\n" );
@@ -62,28 +80,35 @@ int main( int argc, char* args[] ) {
       { SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 }
     };
 
-    Polygon triangle = Polygon( points );
+    MovingPolygon triangle;
+    triangle.points = points;
 
     double angle = 0.0;
-    double angleDelta = 0.1;
-    double angleMax = 0.5;
-    double angleMin = -0.5;
+    double angleDelta = 0.001;
+    double angleMax = 0.005;
+    double angleMin = -0.005;
+
+    bool move = false;
 
     while( !quit ) {
+      move = false;
       while( SDL_PollEvent( &e ) != 0 ) {
         if( e.type == SDL_QUIT ) {
           quit = true;
         } else if( e.type == SDL_KEYDOWN ) {
           switch( e.key.keysym.sym ) {
+            case SDLK_LEFT:
+              if( !(angle > angleMax) ) {
+                angle += angleDelta;
+              }
+              break;
             case SDLK_RIGHT:
               if( !(angle < angleMin) ) {
                 angle -= angleDelta;
               }
               break;
-            case SDLK_LEFT:
-              if( !(angle > angleMax) ) {
-                angle += angleDelta;
-              }
+            case SDLK_UP:
+              move = true;
               break;
           }
         }
@@ -92,10 +117,14 @@ int main( int argc, char* args[] ) {
       SDL_RenderClear( gRenderer );
       SDL_SetRenderDrawColor( gRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE );
 
-      triangle.render( gRenderer );
+      render( gRenderer, triangle );
       SDL_RenderPresent( gRenderer );
 
-      triangle.rotate2D( angle );
+      triangle = rotate2D( triangle, angle );
+      if( move ) {
+        triangle = translate2D( triangle, 5 );
+      }
+      std::cout << triangle.heading << std::endl;
     }
   }
   close();
