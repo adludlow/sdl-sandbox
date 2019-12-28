@@ -1,15 +1,15 @@
 class Point {
   public:
     Point();
-    Point( int x, int y );
+    Point( double x, double y );
     ~Point();
 
-    int getX();
-    void setX( int x );
-    int getY();
-    void setY( int y );
+    double getX();
+    void setX( double x );
+    double getY();
+    void setY( double y );
 
   private:
-    int x;
-    int y;
+    double x;
+    double y;
 };

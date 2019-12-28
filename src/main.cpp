@@ -1,4 +1,6 @@
 #include <SDL.h>
+#include <chrono>
+#include <thread>
 
 #include "Polygon.h"
 
@@ -53,24 +55,47 @@ int main( int argc, char* args[] ) {
     bool quit = false;
     SDL_Event e;
 
+    std::vector<Point> _points = { 
+      Point( SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 ),
+      Point( SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 20 ),
+      Point( SCREEN_WIDTH / 2 + 10, SCREEN_HEIGHT / 2 ),
+      Point( SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 )
+    };
+
+    Polygon triangle = Polygon( _points );
+
+    double angle = 0.0;
+    double angleDelta = 0.1;
+    double angleMax = 0.5;
+    double angleMin = -0.5;
+
     while( !quit ) {
       while( SDL_PollEvent( &e ) != 0 ) {
         if( e.type == SDL_QUIT ) {
           quit = true;
+        } else if( e.type == SDL_KEYDOWN ) {
+          switch( e.key.keysym.sym ) {
+            case SDLK_RIGHT:
+              if( !(angle < angleMin) ) {
+                angle -= angleDelta;
+              }
+              break;
+            case SDLK_LEFT:
+              if( !(angle > angleMax) ) {
+                angle += angleDelta;
+              }
+              break;
+          }
         }
       }
       SDL_SetRenderDrawColor( gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE );
       SDL_RenderClear( gRenderer );
       SDL_SetRenderDrawColor( gRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE );
-      SDL_Point points[4] = {
-        { 50, 50 },
-        { 75, 25 },
-        { 100, 50 },
-        { 50, 50 }
-      };
 
-      SDL_RenderDrawLines( gRenderer, points, 4 );
+      triangle.render( gRenderer );
       SDL_RenderPresent( gRenderer );
+
+      triangle.rotate2D( angle );
     }
   }
   close();
