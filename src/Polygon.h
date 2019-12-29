@@ -8,6 +8,9 @@
 
 struct Polygon {
   std::vector<Point> points;
+
+  Polygon() {}
+  Polygon( std::vector<Point> points ) : points( points ) {}
 };
 
 #endif

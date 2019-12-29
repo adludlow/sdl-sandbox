@@ -80,37 +80,54 @@ int main( int argc, char* args[] ) {
       { SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 }
     };
 
+    Polygon screenBorder ( {
+      { 0, 0 },
+      { SCREEN_WIDTH, 0 },
+      { SCREEN_WIDTH, SCREEN_HEIGHT },
+      { 0, SCREEN_HEIGHT },
+      { 0, 0 }
+    } );
+
     MovingPolygon triangle;
     triangle.points = points;
 
     double angle = 0.0;
-    double angleDelta = 0.001;
-    double angleMax = 0.005;
-    double angleMin = -0.005;
+    double angleDelta = 0.005;
 
     bool move = false;
+    bool rotate = false;
+
+    const Uint8 *keystate = NULL;
 
     while( !quit ) {
-      move = false;
+      //move = false;
       while( SDL_PollEvent( &e ) != 0 ) {
-        if( e.type == SDL_QUIT ) {
-          quit = true;
-        } else if( e.type == SDL_KEYDOWN ) {
-          switch( e.key.keysym.sym ) {
-            case SDLK_LEFT:
-              if( !(angle > angleMax) ) {
-                angle += angleDelta;
-              }
-              break;
-            case SDLK_RIGHT:
-              if( !(angle < angleMin) ) {
-                angle -= angleDelta;
-              }
-              break;
-            case SDLK_UP:
+        keystate = SDL_GetKeyboardState(NULL);
+        switch( e.type ) {
+          case SDL_QUIT:
+            quit = true;
+            break;
+          case SDL_KEYDOWN:
+            if( keystate[SDL_SCANCODE_LEFT] ) {
+              angle = angleDelta;
+              rotate = true;
+            }
+            if( keystate[SDL_SCANCODE_RIGHT] ) {
+              angle = -angleDelta;
+              rotate = true;
+            }
+            if( keystate[SDL_SCANCODE_UP] ) {
               move = true;
-              break;
-          }
+            }
+            break;
+          case SDL_KEYUP:
+            if( !keystate[SDL_SCANCODE_LEFT] && !keystate[SDL_SCANCODE_RIGHT] ) {
+              rotate = false;
+            }
+            if( !keystate[SDL_SCANCODE_UP] ) {
+              move = false;
+            }
+            break;
         }
       }
       SDL_SetRenderDrawColor( gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE );
@@ -120,11 +137,12 @@ int main( int argc, char* args[] ) {
       render( gRenderer, triangle );
       SDL_RenderPresent( gRenderer );
 
-      triangle = rotate2D( triangle, angle );
-      if( move ) {
-        triangle = translate2D( triangle, 5 );
+      if( rotate ) {
+        triangle = rotate2D( triangle, angle );
       }
-      std::cout << triangle.heading << std::endl;
+      if( move ) {
+        triangle = translate2D( triangle, 1, screenBorder );
+      }
     }
   }
   close();

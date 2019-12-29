@@ -1,21 +1,31 @@
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
 #include <cmath>
 
 #include "transform.h"
 
-namespace geom = boost::geometry;
-namespace trans = geom::strategy::transform;
+polygon_t polygonToBoostPolygon( Polygon& poly ) {
+  polygon_t boostPoly;
+  for( unsigned int i = 0; i < poly.points.size(); i++ ) {
+    boostPoly.outer().push_back( point_t(poly.points[i].x, poly.points[i].y));
+  }
+  geom::correct( boostPoly );
+  return boostPoly;
+}
 
-typedef geom::model::point<double, 2, boost::geometry::cs::cartesian> point_t;
-typedef geom::model::polygon<point_t> polygon_t;
+Polygon boostPolygonToPolygon( polygon_t& boostPoly ) {
+  std::vector<Point> newPoints;
+  for( unsigned int i = 0; i < boostPoly.outer().size(); i++ ) {
+    newPoints.push_back(
+      { boostPoly.outer()[i].get<0>(), boostPoly.outer()[i].get<1>() }
+    );
+  }
+  Polygon newPoly;
+  newPoly.points = newPoints;
+
+  return newPoly;
+}
 
 MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
-  polygon_t poly;
-  for( unsigned int i = 0; i < polygon.points.size(); i++ ) {
-    poly.outer().push_back( point_t(polygon.points[i].x, polygon.points[i].y));
-  }
-  geom::correct( poly );
+  polygon_t poly = polygonToBoostPolygon( polygon );
 
   double deltaX = -magnitude * sin(polygon.heading);
   double deltaY = -magnitude * cos(polygon.heading);
@@ -27,17 +37,21 @@ MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
   );
   geom::transform( poly, poly_t, translate );
 
-  std::vector<Point> newPoints;
-  for( unsigned int i = 0; i < poly_t.outer().size(); i++ ) {
-    newPoints.push_back(
-      { poly_t.outer()[i].get<0>(), poly_t.outer()[i].get<1>() }
-    );
-  }
-  MovingPolygon newPoly;
-  newPoly.points = newPoints;
+  MovingPolygon newPoly(boostPolygonToPolygon( poly_t ));
   newPoly.heading = polygon.heading;
 
   return newPoly;
+}
+
+MovingPolygon translate2D( MovingPolygon polygon, int magnitude, Polygon border ) {
+  MovingPolygon translated = translate2D( polygon, magnitude );
+  polygon_t translatedBoostPoly = polygonToBoostPolygon( translated );
+  polygon_t boostBorder = polygonToBoostPolygon( border );
+  if( geom::within( translatedBoostPoly, boostBorder )) {
+    return translated;
+  } else {
+    return polygon;
+  }
 }
 
 MovingPolygon rotate2D( MovingPolygon polygon, double angle ) {
