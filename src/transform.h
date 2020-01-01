@@ -9,7 +9,9 @@ namespace trans = geom::strategy::transform;
 typedef geom::model::point<double, 2, boost::geometry::cs::cartesian> point_t;
 typedef geom::model::polygon<point_t> polygon_t;
 
-MovingPolygon rotate2D( MovingPolygon polygon, double angle );
+MovingPolygon rotate2D( MovingPolygon polygon, double angle, bool keepHeading = false );
 MovingPolygon translate2D( MovingPolygon polygon, int magnitude );
 MovingPolygon translate2D( MovingPolygon polygon, int magnitude, Polygon border );
 polygon_t polygonToBoostPolygon( Polygon& poly );
+
+bool within( Polygon inner, Polygon outer );

@@ -8,6 +8,7 @@
 
 struct Polygon {
   std::vector<Point> points;
+  Point centroid;
 
   Polygon() {}
   Polygon( std::vector<Point> points ) : points( points ) {}

@@ -2,6 +2,14 @@
 
 #include "transform.h"
 
+point_t pointToBoostPoint( Point& point ) {
+  return point_t( point.x, point.y );
+}
+
+Point boostPointToPoint( point_t& boostPoint ) {
+  return { boostPoint.get<0>(), boostPoint.get<1>() };
+}
+
 polygon_t polygonToBoostPolygon( Polygon& poly ) {
   polygon_t boostPoly;
   for( unsigned int i = 0; i < poly.points.size(); i++ ) {
@@ -24,6 +32,15 @@ Polygon boostPolygonToPolygon( polygon_t& boostPoly ) {
   return newPoly;
 }
 
+bool within( Polygon inner, Polygon outer ) {
+  polygon_t innerBoostPoly = polygonToBoostPolygon( inner );
+  polygon_t outerBoostPoly = polygonToBoostPolygon( outer );
+  if( geom::within( innerBoostPoly, outerBoostPoly )) {
+    return true;
+  } 
+  return false;
+}
+
 MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
   polygon_t poly = polygonToBoostPolygon( polygon );
 
@@ -40,6 +57,11 @@ MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
   MovingPolygon newPoly(boostPolygonToPolygon( poly_t ));
   newPoly.heading = polygon.heading;
 
+  point_t centroid;
+  geom::centroid( poly, centroid );
+
+  newPoly.centroid = boostPointToPoint( centroid );
+
   return newPoly;
 }
 
@@ -54,12 +76,8 @@ MovingPolygon translate2D( MovingPolygon polygon, int magnitude, Polygon border 
   }
 }
 
-MovingPolygon rotate2D( MovingPolygon polygon, double angle ) {
-  polygon_t poly;
-  for( unsigned int i = 0; i < polygon.points.size(); i++ ) {
-    poly.outer().push_back( point_t(polygon.points[i].x, polygon.points[i].y));
-  }
-  geom::correct( poly );
+MovingPolygon rotate2D( MovingPolygon polygon, double angle, bool keepHeading ) {
+  polygon_t poly = polygonToBoostPolygon( polygon );
 
   // Calculate centroid
   point_t centroid;
@@ -84,20 +102,18 @@ MovingPolygon rotate2D( MovingPolygon polygon, double angle ) {
   polygon_t result;
   geom::transform( poly_c, result, translateBack );
 
-  std::vector<Point> newPoints;
-  for( unsigned int i = 0; i < result.outer().size(); i++ ) {
-    newPoints.push_back(
-      { result.outer()[i].get<0>(), result.outer()[i].get<1>() }
-    );
-  }
-  MovingPolygon newPoly;
-  newPoly.points = newPoints;
-  if( polygon.heading + angle > 2 * M_PI ) {
-    newPoly.heading = polygon.heading + angle - 2 * M_PI;
-  } else if( polygon.heading + angle < 0 ) {
-    newPoly.heading = polygon.heading + angle + 2 * M_PI;
+  MovingPolygon newPoly(boostPolygonToPolygon( result ));
+
+  if( !keepHeading ) {
+    if( polygon.heading + angle > 2 * M_PI ) {
+      newPoly.heading = polygon.heading + angle - 2 * M_PI;
+    } else if( polygon.heading + angle < 0 ) {
+      newPoly.heading = polygon.heading + angle + 2 * M_PI;
+    } else {
+      newPoly.heading = polygon.heading + angle;
+    }
   } else {
-    newPoly.heading = polygon.heading + angle;
+    newPoly.heading = polygon.heading;
   }
 
   return newPoly;
