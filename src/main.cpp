@@ -1,21 +1,22 @@
 #include <SDL.h>
 #include <chrono>
 #include <thread>
-#include <algorithm>
 #include <iostream>
 #include <cmath>
 #include <random>
 #include <algorithm>
 #include <queue>
 
-#include "MovingPolygon.h"
+#include "MovingRenderablePolygon.h"
 #include "transform.h"
 
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 960;
 
-const int INIT_ASTEROIDS = 100;
+const int INIT_ASTEROIDS = 5;
 const int MAX_ASTEROIDS = 10;
+
+const double pi = boost::math::constants::pi<double>();
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
@@ -74,21 +75,6 @@ void close() {
   SDL_Quit();
 }
 
-void render( SDL_Renderer* renderer, Polygon poly ) {
-  std::vector<SDL_Point> sdlPoints;
-  sdlPoints.resize(poly.points.size());
-  std::transform(
-    poly.points.begin(),
-    poly.points.end(),
-    sdlPoints.begin(),
-    []( Point p ) -> SDL_Point {
-      return { round(p.x), round(p.y) };
-    }
-  );
-
-  SDL_RenderDrawLines( renderer, sdlPoints.data(), sdlPoints.size() );
-}
-
 double random( double min, double max ) {
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -99,7 +85,7 @@ double random( double min, double max ) {
 Polygon generatePolygon( Point center, double radius, int numVerts ) {
   std::vector<double> angles;
   for( int i = 0; i < numVerts; i++ ) {
-    double angle = random( 0, 1 ) * M_PI*2;
+    double angle = random( 0, 1 ) * pi*2;
     angles.push_back(angle);
   }
   std::sort( angles.begin(), angles.end() );
@@ -115,13 +101,14 @@ Polygon generatePolygon( Point center, double radius, int numVerts ) {
   return Polygon( points );
 }
 
-void renderPipeline( SDL_Renderer* renderer, std::vector<Polygon> objectsToRender ) {
+void renderPipeline( SDL_Renderer* renderer, std::vector<MovingRenderablePolygon> objectsToRender ) {
   for( auto it = objectsToRender.begin(); it != objectsToRender.end(); it++ ) {
-    render( renderer, *it );
+    it->render( renderer );
+    //render( renderer, *it );
   }
 }
 
-void renderFrame( SDL_Renderer* renderer, std::vector<Polygon> objectsToRender ) {
+void renderFrame( SDL_Renderer* renderer, std::vector<MovingRenderablePolygon> objectsToRender ) {
   SDL_SetRenderDrawColor( gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE );
   SDL_RenderClear( gRenderer );
   SDL_SetRenderDrawColor( gRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE );
@@ -131,25 +118,40 @@ void renderFrame( SDL_Renderer* renderer, std::vector<Polygon> objectsToRender )
   SDL_RenderPresent( gRenderer );
 }
 
-MovingPolygon generateAsteroid() {
-  MovingPolygon asteroid = generatePolygon( { SCREEN_WIDTH, random(0, SCREEN_HEIGHT ) }, 100, 10 );
-  asteroid.heading = random( 0, M_PI );
+MovingRenderablePolygon generateAsteroid() {
+  double y = 0;
+  double x = random( -100, SCREEN_WIDTH + 100 );
+  double heading = 0;
+  if( x > 0 && x < SCREEN_WIDTH ) {
+    double aboveOrBelow = random( 0, 1 );
+    if( aboveOrBelow < 0.5 ) {
+      y = -100;
+      heading = random( -pi, 0);
+    } else {
+      y = SCREEN_HEIGHT + 100;
+      heading = random( 0, pi );
+    }
+  } else {
+    y = random( -100, SCREEN_HEIGHT + 100 );
+  }
+  MovingRenderablePolygon asteroid = MovingRenderablePolygon(generatePolygon( { x, y }, 100, 10 ));
+  asteroid.heading = heading;
   return asteroid;
 }
 
-std::vector<MovingPolygon> generateAsteroids( int numAsteroids ) {
-  std::vector<MovingPolygon> asteroids;
+std::vector<MovingRenderablePolygon> generateAsteroids( int numAsteroids ) {
+  std::vector<MovingRenderablePolygon> asteroids;
   for( int i = 0; i < numAsteroids; i++ ) {
     asteroids.push_back(generateAsteroid());
   }
   return asteroids;
 }
 
-std::vector<MovingPolygon> updateAsteroids( std::vector<MovingPolygon> asteroids ) {
-  std::vector<MovingPolygon> updatedAsteroids;
+std::vector<MovingRenderablePolygon> updateAsteroids( std::vector<MovingRenderablePolygon> asteroids ) {
+  std::vector<MovingRenderablePolygon> updatedAsteroids;
   for( auto it = asteroids.begin(); it != asteroids.end(); it++ ) {
     if( within( *it, gameSpace )) {
-      MovingPolygon updatedAsteroid = translate2D( rotate2D( *it, 0.002, true ), 1 );
+      MovingRenderablePolygon updatedAsteroid(translate2D( rotate2D( *it, 0.002, true ), 1 ));
       updatedAsteroids.push_back( updatedAsteroid );
     } 
     else {
@@ -158,6 +160,10 @@ std::vector<MovingPolygon> updateAsteroids( std::vector<MovingPolygon> asteroids
   }
   return updatedAsteroids;
 }
+
+#ifdef main
+# undef main
+#endif /* main */
 
 int main( int argc, char* args[] ) {
   if( !init() ) {
@@ -173,10 +179,10 @@ int main( int argc, char* args[] ) {
       { SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 }
     };
 
-    MovingPolygon triangle;
+    MovingRenderablePolygon triangle;
     triangle.points = points;
 
-    std::vector<MovingPolygon> asteroids = generateAsteroids( INIT_ASTEROIDS );
+    std::vector<MovingRenderablePolygon> asteroids = generateAsteroids( INIT_ASTEROIDS );
 
     double angle = 0.0;
     double angleDelta = 0.005;
@@ -186,7 +192,7 @@ int main( int argc, char* args[] ) {
 
     const Uint8 *keystate = NULL;
 
-    std::vector<Polygon> objectsToRender;
+    std::vector<MovingRenderablePolygon> objectsToRender;
     
     while( !quit ) {
       //move = false;

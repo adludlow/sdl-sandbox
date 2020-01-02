@@ -3,12 +3,14 @@
 
 #include "Polygon.h"
 
-struct MovingPolygon : Polygon {
-  double heading = 0;
-  int velocity = 0;
+class MovingPolygon : Polygon {
+  public:
+    double heading = 0;
+    int velocity = 0;
+    double rotation = 0;
 
-  MovingPolygon() {}
-  MovingPolygon( Polygon poly ) : Polygon { poly.points } {}
+    MovingPolygon() {}
+    MovingPolygon( Polygon poly ) : Polygon { poly.points } {}
 };
 
 #endif

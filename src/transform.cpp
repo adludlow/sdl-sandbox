@@ -2,6 +2,8 @@
 
 #include "transform.h"
 
+const double pi = boost::math::constants::pi<double>();
+
 point_t pointToBoostPoint( Point& point ) {
   return point_t( point.x, point.y );
 }
@@ -41,7 +43,7 @@ bool within( Polygon inner, Polygon outer ) {
   return false;
 }
 
-MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
+MovingRenderablePolygon translate2D( MovingRenderablePolygon polygon, int magnitude ) {
   polygon_t poly = polygonToBoostPolygon( polygon );
 
   double deltaX = -magnitude * sin(polygon.heading);
@@ -54,7 +56,7 @@ MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
   );
   geom::transform( poly, poly_t, translate );
 
-  MovingPolygon newPoly(boostPolygonToPolygon( poly_t ));
+  MovingRenderablePolygon newPoly(boostPolygonToPolygon( poly_t ));
   newPoly.heading = polygon.heading;
 
   point_t centroid;
@@ -65,8 +67,8 @@ MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
   return newPoly;
 }
 
-MovingPolygon translate2D( MovingPolygon polygon, int magnitude, Polygon border ) {
-  MovingPolygon translated = translate2D( polygon, magnitude );
+MovingRenderablePolygon translate2D( MovingRenderablePolygon polygon, int magnitude, Polygon border ) {
+  MovingRenderablePolygon translated = translate2D( polygon, magnitude );
   polygon_t translatedBoostPoly = polygonToBoostPolygon( translated );
   polygon_t boostBorder = polygonToBoostPolygon( border );
   if( geom::within( translatedBoostPoly, boostBorder )) {
@@ -76,7 +78,7 @@ MovingPolygon translate2D( MovingPolygon polygon, int magnitude, Polygon border 
   }
 }
 
-MovingPolygon rotate2D( MovingPolygon polygon, double angle, bool keepHeading ) {
+MovingRenderablePolygon rotate2D( MovingRenderablePolygon polygon, double angle, bool keepHeading ) {
   polygon_t poly = polygonToBoostPolygon( polygon );
 
   // Calculate centroid
@@ -102,13 +104,13 @@ MovingPolygon rotate2D( MovingPolygon polygon, double angle, bool keepHeading ) 
   polygon_t result;
   geom::transform( poly_c, result, translateBack );
 
-  MovingPolygon newPoly(boostPolygonToPolygon( result ));
+  MovingRenderablePolygon newPoly(boostPolygonToPolygon( result ));
 
   if( !keepHeading ) {
-    if( polygon.heading + angle > 2 * M_PI ) {
-      newPoly.heading = polygon.heading + angle - 2 * M_PI;
+    if( polygon.heading + angle > 2 * pi ) {
+      newPoly.heading = polygon.heading + angle - 2 * pi;
     } else if( polygon.heading + angle < 0 ) {
-      newPoly.heading = polygon.heading + angle + 2 * M_PI;
+      newPoly.heading = polygon.heading + angle + 2 * pi;
     } else {
       newPoly.heading = polygon.heading + angle;
     }

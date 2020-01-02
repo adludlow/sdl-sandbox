@@ -6,12 +6,14 @@
 
 #include "Point.h"
 
-struct Polygon {
-  std::vector<Point> points;
-  Point centroid;
+class Polygon {
+  public:
+    Polygon() {}
+    Polygon( std::vector<Point> points ) : points( points ) {}
 
-  Polygon() {}
-  Polygon( std::vector<Point> points ) : points( points ) {}
+    std::vector<Point> points;
+    Point centroid;
+
 };
 
 #endif
