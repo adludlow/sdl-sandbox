@@ -2,20 +2,16 @@
 #define MOVINGRENDERABLEPOLYGON_H
 
 #include "Renderable.h"
-#include "Polygon.h"
+#include "MovingPolygon.h"
 
-class MovingRenderablePolygon: Renderable, public Polygon {
+class MovingRenderablePolygon: Renderable, public MovingPolygon {
   public:
     MovingRenderablePolygon();
-    MovingRenderablePolygon( Polygon polygon );
+    MovingRenderablePolygon( MovingPolygon polygon );
     ~MovingRenderablePolygon();
 
     void render( SDL_Renderer* renderer );
     void move();
-
-    double heading = 0;
-    int velocity = 0;
-    double rotation = 0;
 };
 
 #endif

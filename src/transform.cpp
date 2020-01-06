@@ -35,15 +35,17 @@ Polygon boostPolygonToPolygon( polygon_t& boostPoly ) {
 }
 
 bool within( Polygon inner, Polygon outer ) {
-  polygon_t innerBoostPoly = polygonToBoostPolygon( inner );
+  point_t centroid;
+  geom::centroid( polygonToBoostPolygon(inner), centroid );
+  //polygon_t innerBoostPoly = polygonToBoostPolygon( inner );
   polygon_t outerBoostPoly = polygonToBoostPolygon( outer );
-  if( geom::within( innerBoostPoly, outerBoostPoly )) {
+  if( geom::within( centroid, outerBoostPoly )) {
     return true;
   } 
   return false;
 }
 
-MovingRenderablePolygon translate2D( MovingRenderablePolygon polygon, int magnitude ) {
+MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
   polygon_t poly = polygonToBoostPolygon( polygon );
 
   double deltaX = -magnitude * sin(polygon.heading);
@@ -56,7 +58,7 @@ MovingRenderablePolygon translate2D( MovingRenderablePolygon polygon, int magnit
   );
   geom::transform( poly, poly_t, translate );
 
-  MovingRenderablePolygon newPoly(boostPolygonToPolygon( poly_t ));
+  MovingPolygon newPoly(boostPolygonToPolygon( poly_t ));
   newPoly.heading = polygon.heading;
 
   point_t centroid;
@@ -67,8 +69,8 @@ MovingRenderablePolygon translate2D( MovingRenderablePolygon polygon, int magnit
   return newPoly;
 }
 
-MovingRenderablePolygon translate2D( MovingRenderablePolygon polygon, int magnitude, Polygon border ) {
-  MovingRenderablePolygon translated = translate2D( polygon, magnitude );
+MovingPolygon translate2D( MovingPolygon polygon, int magnitude, Polygon border ) {
+  MovingPolygon translated = translate2D( polygon, magnitude );
   polygon_t translatedBoostPoly = polygonToBoostPolygon( translated );
   polygon_t boostBorder = polygonToBoostPolygon( border );
   if( geom::within( translatedBoostPoly, boostBorder )) {
@@ -78,7 +80,7 @@ MovingRenderablePolygon translate2D( MovingRenderablePolygon polygon, int magnit
   }
 }
 
-MovingRenderablePolygon rotate2D( MovingRenderablePolygon polygon, double angle, bool keepHeading ) {
+MovingPolygon rotate2D( MovingPolygon polygon, double angle, bool keepHeading ) {
   polygon_t poly = polygonToBoostPolygon( polygon );
 
   // Calculate centroid
@@ -104,7 +106,7 @@ MovingRenderablePolygon rotate2D( MovingRenderablePolygon polygon, double angle,
   polygon_t result;
   geom::transform( poly_c, result, translateBack );
 
-  MovingRenderablePolygon newPoly(boostPolygonToPolygon( result ));
+  MovingPolygon newPoly(boostPolygonToPolygon( result ));
 
   if( !keepHeading ) {
     if( polygon.heading + angle > 2 * pi ) {

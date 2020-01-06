@@ -4,7 +4,7 @@
 
 MovingRenderablePolygon::MovingRenderablePolygon() {}
 
-MovingRenderablePolygon::MovingRenderablePolygon( Polygon polygon ) : Polygon( polygon ) {}
+MovingRenderablePolygon::MovingRenderablePolygon( MovingPolygon polygon ) : MovingPolygon( polygon ) {}
 
 MovingRenderablePolygon::~MovingRenderablePolygon() {}
 

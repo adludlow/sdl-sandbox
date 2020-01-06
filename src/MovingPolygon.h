@@ -3,7 +3,7 @@
 
 #include "Polygon.h"
 
-class MovingPolygon : Polygon {
+class MovingPolygon : public Polygon {
   public:
     double heading = 0;
     int velocity = 0;
