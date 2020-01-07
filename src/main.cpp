@@ -140,26 +140,47 @@ MovingRenderablePolygon generateAsteroid() {
     case UP:
       x = random( GAMESPACE_ORIGIN_X, GAMESPACE_WIDTH );
       y = GAMESPACE_ORIGIN_Y;
-      heading = random( rad_one_deg * 45, rad_one_deg * 135 );
+      if( x < GAMESPACE_WIDTH / 2 )
+        heading = pi + atan( ( GAMESPACE_WIDTH - 2*x ) / GAMESPACE_HEIGHT );
+      else if ( x > GAMESPACE_WIDTH / 2 )
+        heading = pi - atan( ( GAMESPACE_WIDTH - (( GAMESPACE_WIDTH - x ) * 2)) / GAMESPACE_HEIGHT );
+      else
+        heading = 2 * pi;
       break;
+
     case RIGHT:
-      x = GAMESPACE_WIDTH;
       y = random( GAMESPACE_ORIGIN_Y, GAMESPACE_HEIGHT );
+      x = GAMESPACE_WIDTH;
+      if( y < GAMESPACE_HEIGHT / 2 )
+        heading = pi - atan( GAMESPACE_WIDTH / ( GAMESPACE_HEIGHT - 2*y ) );
+      else if ( y > GAMESPACE_HEIGHT / 2 )
+        heading = atan( GAMESPACE_WIDTH / ( GAMESPACE_HEIGHT - (( GAMESPACE_HEIGHT - y ) * 2)) );
+      else
+        heading = 1.5 * pi;
       break;
+
     case DOWN:
       x = random( GAMESPACE_ORIGIN_X, GAMESPACE_WIDTH );
       y = GAMESPACE_HEIGHT;
+      if ( x < GAMESPACE_WIDTH / 2 )
+        heading = ( 1.5 * pi ) + atan( GAMESPACE_HEIGHT / ( GAMESPACE_WIDTH - 2*x) );
+      else if ( x > GAMESPACE_WIDTH / 2 )
+        heading = atan( ( GAMESPACE_WIDTH - (( GAMESPACE_WIDTH - x ) * 2)) / GAMESPACE_HEIGHT );
+      else
+        heading = 0;
       break;
+
     case LEFT:
-      x = GAMESPACE_ORIGIN_X;
       y = random( GAMESPACE_ORIGIN_Y, GAMESPACE_HEIGHT );
+      x = GAMESPACE_ORIGIN_X;
+      if( y < GAMESPACE_HEIGHT / 2 )
+        heading = ( 1.5 * pi ) - atan( ( GAMESPACE_HEIGHT - 2*y ) / GAMESPACE_WIDTH );
+      else if ( y > GAMESPACE_HEIGHT / 2 )
+        heading = ( 1.5 * pi ) + atan( ( GAMESPACE_HEIGHT - (( GAMESPACE_HEIGHT - y ) * 2)) / GAMESPACE_WIDTH );
+      else
+        heading = 2.5 * pi;
       break;
-    default:
-      x = random( GAMESPACE_ORIGIN_X + 1, GAMESPACE_WIDTH - 1 );
-      y = GAMESPACE_ORIGIN_Y + 1;
-      heading = random( rad_one_deg * 45, rad_one_deg * 135 );
-      break;
-  }
+  } 
 
   MovingRenderablePolygon asteroid = MovingRenderablePolygon(generatePolygon( { x, y }, ASTEROID_RADIUS, ASTEROID_VERTS ));
   asteroid.heading = heading;
@@ -178,7 +199,7 @@ std::vector<MovingRenderablePolygon> updateAsteroids( std::vector<MovingRenderab
   std::vector<MovingRenderablePolygon> updatedAsteroids;
   for( auto it = asteroids.begin(); it != asteroids.end(); it++ ) {
     if( within( *it, gameSpace )) {
-      MovingRenderablePolygon updatedAsteroid(translate2D( rotate2D( *it, 0.002, true ), 1 ));
+      MovingRenderablePolygon updatedAsteroid(translate2D( rotate2D( *it, 0.002, true ), 2 ));
       updatedAsteroids.push_back( updatedAsteroid );
     } 
     else {
