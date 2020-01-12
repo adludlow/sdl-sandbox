@@ -8,6 +8,14 @@ class Point {
 
         Point () {}
         Point ( double x, double y ) : x(x), y(y) {}
+
+        Point operator - ( Point const &point ) {
+            return { point.x - x, point.y - y };
+        }
+
+        Point operator + ( Point const &point ) {
+            return { point.x + x, point.y + y };
+        }
 };
 
 #endif

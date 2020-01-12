@@ -23,8 +23,8 @@ const int GAMESPACE_ORIGIN_Y = -500;
 const int GAMESPACE_WIDTH = SCREEN_WIDTH + 500;
 const int GAMESPACE_HEIGHT = SCREEN_HEIGHT + 500;
 
-const int INIT_ASTEROIDS = 5;
-const int MAX_ASTEROIDS = 10;
+const int INIT_ASTEROIDS = 2;
+const int MAX_ASTEROIDS = 2;
 const int ASTEROID_RADIUS = 150;
 const int ASTEROID_VERTS = 13;
 
@@ -108,8 +108,8 @@ Polygon generatePolygon( Point center, double radius, int numVerts ) {
 
   std::vector<Point> points;
   for ( int i = 0; i < numVerts; i++ ) {
-    double x = center.x + cos( angles.at(i) ) * ( radius + random( -16, 16 ));
-    double y = center.y + sin( angles.at(i) ) * ( radius + random( -16, 16 ));
+    double x = center.x + cos( angles.at(i) ) * ( radius ); //+ random( -16, 16 ));
+    double y = center.y + sin( angles.at(i) ) * ( radius ); //+ random( -16, 16 ));
     points.push_back( { x, y } );
   }
   points.push_back( points.at(0) );
@@ -204,10 +204,74 @@ std::vector<MovingRenderablePolygon> updateAsteroids( std::vector<MovingRenderab
     } 
     else {
       updatedAsteroids.push_back( generateAsteroid() );
-      std::cout << "New Asteroid." << std::endl;
+      //std::cout << "New Asteroid." << std::endl;
     }
   }
   return updatedAsteroids;
+}
+
+bool detectCollision( Polygon p1, Polygon p2 ) {
+  // Create a list of vectors perpendicular to polygon edges.
+  std::vector<Point> normals;
+  for ( int i = 0; i < p1.points.size()-1; i++ ) {
+    Point edge = p1.points[i+1] - p1.points[i];
+    Point normal = { edge.y, -edge.x };
+    normals.push_back(normal);
+  }
+  for ( int i = 0; i < p2.points.size()-1; i++ ) {
+    Point edge = p2.points[i+1] - p2.points[i];
+    Point normal = { edge.y, -edge.x };
+    normals.push_back(normal);
+  }
+
+  // Project vertices from polygons onto the perpendicular vectors (normals);
+  for( auto n = normals.begin(); n != normals.end(); n++ ) {
+    // P1
+    double dp = dotProduct(*n, p1.points[0]);
+    double p1Min = dp;
+    double p1Max = dp;
+    for( auto i = p1.points.begin(); i != p1.points.end(); i++ ) {
+      dp = dotProduct(*i, *n);
+      if( dp < p1Min ) {
+        p1Min = dp;
+      }
+      if( dp > p1Max ) {
+        p1Max = dp;
+      }
+    }
+
+    // P2
+    dp = dotProduct(*n, p2.points[0]);
+    double p2Min = dp;
+    double p2Max = dp;
+    for( auto i = p2.points.begin(); i != p2.points.end(); i++ ) {
+      dp = dotProduct(*i, *n);
+      if( dp < p2Min ) {
+        p2Min = dp;
+      }
+      if( dp > p2Max ) {
+        p2Max = dp;
+      }
+    }
+    double interval;
+    if( p1Min < p2Min ) {
+      interval = p2Min - p1Max;
+    } else {
+      interval = p1Min - p2Max;
+    }
+    if( interval > 1 ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void detectCollisions( std::vector<MovingRenderablePolygon> objects ) {
+  for( int i = 0; i < objects.size(); i++ ) {
+    for( int j = i + 1; j < objects.size(); j++ ) {
+      std::cout << " Colliding: " << detectCollision( objects[i], objects[j] ) << std::endl;
+    }
+  }
 }
 
 #ifdef main
@@ -295,6 +359,8 @@ int main( int argc, char* args[] ) {
 
       objectsToRender.push_back( triangle );
       objectsToRender.insert( objectsToRender.end(), asteroids.begin(), asteroids.end() );
+
+      detectCollisions( objectsToRender );
 
       renderFrame( gRenderer, objectsToRender );
       countedFrames++;

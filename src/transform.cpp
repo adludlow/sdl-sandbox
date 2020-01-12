@@ -1,4 +1,5 @@
 #include <cmath>
+#include <boost/geometry/arithmetic/dot_product.hpp>
 
 #include "transform.h"
 
@@ -121,4 +122,8 @@ MovingPolygon rotate2D( MovingPolygon polygon, double angle, bool keepHeading ) 
   }
 
   return newPoly;
+}
+
+double dotProduct( Point v1, Point v2 ) {
+  return geom::dot_product( pointToBoostPoint(v1), pointToBoostPoint(v2) );
 }

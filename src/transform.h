@@ -13,5 +13,6 @@ MovingPolygon rotate2D( MovingPolygon polygon, double angle, bool keepHeading = 
 MovingPolygon translate2D( MovingPolygon polygon, int magnitude );
 MovingPolygon translate2D( MovingPolygon polygon, int magnitude, Polygon border );
 polygon_t polygonToBoostPolygon( Polygon& poly );
+double dotProduct( Point v1, Point v2 );
 
 bool within( Polygon inner, Polygon outer );
