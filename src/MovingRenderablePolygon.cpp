@@ -1,6 +1,7 @@
+#include <iostream>
 #include <algorithm>
 
-#include "MovingRenderablePolygon.h"
+#include "MovingRenderablePolygon.hpp"
 
 MovingRenderablePolygon::MovingRenderablePolygon() {}
 
@@ -10,15 +11,9 @@ MovingRenderablePolygon::~MovingRenderablePolygon() {}
 
 void MovingRenderablePolygon::render( SDL_Renderer* renderer ) {
   std::vector<SDL_Point> sdlPoints;
-  sdlPoints.resize(points.size());
-  std::transform(
-    points.begin(),
-    points.end(),
-    sdlPoints.begin(),
-    []( Point p ) -> SDL_Point {
-      return { round(p.x), round(p.y) };
-    }
-  );
+  for( auto i : points() ) {
+    sdlPoints.push_back({ round(i.x), round(i.y)});
+  }
 
   SDL_RenderDrawLines( renderer, sdlPoints.data(), sdlPoints.size() );
 }

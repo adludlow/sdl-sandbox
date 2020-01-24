@@ -1,41 +1,10 @@
 #include <cmath>
 #include <boost/geometry/arithmetic/dot_product.hpp>
 
-#include "transform.h"
+#include "transform.hpp"
+#include "constants.hpp"
 
-const double pi = boost::math::constants::pi<double>();
-
-point_t pointToBoostPoint( Point& point ) {
-  return point_t( point.x, point.y );
-}
-
-Point boostPointToPoint( point_t& boostPoint ) {
-  return { boostPoint.get<0>(), boostPoint.get<1>() };
-}
-
-polygon_t polygonToBoostPolygon( Polygon& poly ) {
-  polygon_t boostPoly;
-  for( unsigned int i = 0; i < poly.points.size(); i++ ) {
-    boostPoly.outer().push_back( point_t(poly.points[i].x, poly.points[i].y));
-  }
-  geom::correct( boostPoly );
-  return boostPoly;
-}
-
-Polygon boostPolygonToPolygon( polygon_t& boostPoly ) {
-  std::vector<Point> newPoints;
-  for( unsigned int i = 0; i < boostPoly.outer().size(); i++ ) {
-    newPoints.push_back(
-      { boostPoly.outer()[i].get<0>(), boostPoly.outer()[i].get<1>() }
-    );
-  }
-  Polygon newPoly;
-  newPoly.points = newPoints;
-
-  return newPoly;
-}
-
-bool within( Polygon inner, Polygon outer ) {
+bool within( const Polygon& inner, const Polygon& outer ) {
   point_t centroid;
   geom::centroid( polygonToBoostPolygon(inner), centroid );
   //polygon_t innerBoostPoly = polygonToBoostPolygon( inner );
@@ -44,6 +13,28 @@ bool within( Polygon inner, Polygon outer ) {
     return true;
   } 
   return false;
+}
+
+void translate2D( Polygon& polygon, double heading, int magnitude ) {
+  polygon_t poly = polygonToBoostPolygon( polygon );
+
+  double deltaX = -magnitude * sin(heading);
+  double deltaY = -magnitude * cos(heading);
+
+  polygon_t poly_t;
+  trans::translate_transformer<double, 2, 2> translate( 
+    deltaX,
+    deltaY
+  );
+  geom::transform( poly, poly_t, translate );
+
+  Polygon newPoly(boostPolygonToPolygon( poly_t ));
+  polygon.setPoints(newPoly.points());
+
+  point_t centroid;
+  geom::centroid( poly, centroid );
+
+  polygon.setCentroid(boostPointToPoint( centroid ));
 }
 
 MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
@@ -65,23 +56,21 @@ MovingPolygon translate2D( MovingPolygon polygon, int magnitude ) {
   point_t centroid;
   geom::centroid( poly, centroid );
 
-  newPoly.centroid = boostPointToPoint( centroid );
+  newPoly.setCentroid(boostPointToPoint( centroid ));
 
   return newPoly;
 }
 
-MovingPolygon translate2D( MovingPolygon polygon, int magnitude, Polygon border ) {
+void translate2D( MovingPolygon& polygon, int magnitude, Polygon border ) {
   MovingPolygon translated = translate2D( polygon, magnitude );
   polygon_t translatedBoostPoly = polygonToBoostPolygon( translated );
   polygon_t boostBorder = polygonToBoostPolygon( border );
   if( geom::within( translatedBoostPoly, boostBorder )) {
-    return translated;
-  } else {
-    return polygon;
+    polygon.setPoints(translated.points());
   }
 }
 
-MovingPolygon rotate2D( MovingPolygon polygon, double angle, bool keepHeading ) {
+void rotate2D( MovingPolygon& polygon, double angle, bool keepHeading ) {
   polygon_t poly = polygonToBoostPolygon( polygon );
 
   // Calculate centroid
@@ -108,20 +97,21 @@ MovingPolygon rotate2D( MovingPolygon polygon, double angle, bool keepHeading ) 
   geom::transform( poly_c, result, translateBack );
 
   MovingPolygon newPoly(boostPolygonToPolygon( result ));
+  polygon.setPoints(newPoly.points());
 
+  double heading = 0;
   if( !keepHeading ) {
     if( polygon.heading + angle > 2 * pi ) {
-      newPoly.heading = polygon.heading + angle - 2 * pi;
+      heading = polygon.heading + angle - 2 * pi;
     } else if( polygon.heading + angle < 0 ) {
-      newPoly.heading = polygon.heading + angle + 2 * pi;
+      heading = polygon.heading + angle + 2 * pi;
     } else {
-      newPoly.heading = polygon.heading + angle;
+      heading = polygon.heading + angle;
     }
   } else {
-    newPoly.heading = polygon.heading;
+    heading = polygon.heading;
   }
-
-  return newPoly;
+  polygon.heading = heading;
 }
 
 double dotProduct( Point v1, Point v2 ) {

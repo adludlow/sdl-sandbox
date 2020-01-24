@@ -1,10 +1,10 @@
 #ifndef MOVINGRENDERABLEPOLYGON_H
 #define MOVINGRENDERABLEPOLYGON_H
 
-#include "Renderable.h"
-#include "MovingPolygon.h"
+#include "Renderable.hpp"
+#include "MovingPolygon.hpp"
 
-class MovingRenderablePolygon: Renderable, public MovingPolygon {
+class MovingRenderablePolygon: public Renderable, public MovingPolygon {
   public:
     MovingRenderablePolygon();
     MovingRenderablePolygon( MovingPolygon polygon );

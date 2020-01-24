@@ -3,36 +3,16 @@
 #include <thread>
 #include <iostream>
 #include <cmath>
-#include <random>
 #include <algorithm>
 #include <queue>
+#include <memory>
 
-#include "Timer.h"
-#include "MovingRenderablePolygon.h"
-#include "transform.h"
-
-enum SIDE { UP, RIGHT, DOWN, LEFT };
-
-const int SCREEN_ORIGIN_X = 0;
-const int SCREEN_ORIGIN_Y = 0;
-const int SCREEN_WIDTH = 1280;
-const int SCREEN_HEIGHT = 960;
-
-const int GAMESPACE_ORIGIN_X = -500;
-const int GAMESPACE_ORIGIN_Y = -500;
-const int GAMESPACE_WIDTH = SCREEN_WIDTH + 500;
-const int GAMESPACE_HEIGHT = SCREEN_HEIGHT + 500;
-
-const int INIT_ASTEROIDS = 2;
-const int MAX_ASTEROIDS = 2;
-const int ASTEROID_RADIUS = 150;
-const int ASTEROID_VERTS = 13;
-
-const int SCREEN_FPS = 60;
-const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
-
-const double pi = boost::math::constants::pi<double>();
-const double rad_one_deg = 2 * pi / 360;
+#include "Timer.hpp"
+#include "Asteroid.hpp"
+#include "MovingRenderablePolygon.hpp"
+#include "transform.hpp"
+#include "constants.hpp"
+#include "util.hpp"
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
@@ -91,135 +71,95 @@ void close() {
   SDL_Quit();
 }
 
-double random( double min, double max ) {
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<> dis( min, max );
-  return dis(gen);
-}
-
-Polygon generatePolygon( Point center, double radius, int numVerts ) {
-  std::vector<double> angles;
-  for( int i = 0; i < numVerts; i++ ) {
-    double angle = random( 0, 1 ) * pi*2;
-    angles.push_back(angle);
-  }
-  std::sort( angles.begin(), angles.end() );
-
-  std::vector<Point> points;
-  for ( int i = 0; i < numVerts; i++ ) {
-    double x = center.x + cos( angles.at(i) ) * ( radius ); //+ random( -16, 16 ));
-    double y = center.y + sin( angles.at(i) ) * ( radius ); //+ random( -16, 16 ));
-    points.push_back( { x, y } );
-  }
-  points.push_back( points.at(0) );
-
-  return Polygon( points );
-}
-
-void renderPipeline( SDL_Renderer* renderer, std::vector<MovingRenderablePolygon> objectsToRender ) {
+void renderPipeline( SDL_Renderer* renderer, std::vector<Renderable*> objectsToRender ) {
   for( auto it = objectsToRender.begin(); it != objectsToRender.end(); it++ ) {
-    it->render( renderer );
+    (*it)->render( renderer );
   }
 }
 
-void renderFrame( SDL_Renderer* renderer, std::vector<MovingRenderablePolygon> objectsToRender ) {
-  SDL_SetRenderDrawColor( gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE );
-  SDL_RenderClear( gRenderer );
-  SDL_SetRenderDrawColor( gRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE );
+void renderFrame( SDL_Renderer* renderer, std::vector<Renderable*> objectsToRender ) {
+  SDL_SetRenderDrawColor( renderer, 0, 0, 0, SDL_ALPHA_OPAQUE );
+  SDL_RenderClear( renderer );
+  SDL_SetRenderDrawColor( renderer, 255, 255, 255, SDL_ALPHA_OPAQUE );
 
-  renderPipeline( gRenderer, objectsToRender );
+  renderPipeline( renderer, objectsToRender );
 
-  SDL_RenderPresent( gRenderer );
+  SDL_RenderPresent( renderer );
 }
 
-MovingRenderablePolygon generateAsteroid() {
+std::unique_ptr<Asteroid> generateAsteroid() {
   double x, y, heading = 0;
   int side = round( random( 0, 3 ) );
   switch ( side ) {
     case UP:
-      x = random( GAMESPACE_ORIGIN_X, GAMESPACE_WIDTH );
-      y = GAMESPACE_ORIGIN_Y;
-      if( x < GAMESPACE_WIDTH / 2 )
-        heading = pi + atan( ( GAMESPACE_WIDTH - 2*x ) / GAMESPACE_HEIGHT );
-      else if ( x > GAMESPACE_WIDTH / 2 )
-        heading = pi - atan( ( GAMESPACE_WIDTH - (( GAMESPACE_WIDTH - x ) * 2)) / GAMESPACE_HEIGHT );
+      x = random( CREATION_ZONE_ORIGIN_X, CREATION_ZONE_WIDTH );
+      y = CREATION_ZONE_ORIGIN_Y;
+      if( x < CREATION_ZONE_WIDTH / 2 )
+        heading = pi + atan( ( CREATION_ZONE_WIDTH - 2*x ) / CREATION_ZONE_HEIGHT );
+      else if ( x > CREATION_ZONE_WIDTH / 2 )
+        heading = pi - atan( ( CREATION_ZONE_WIDTH - (( CREATION_ZONE_WIDTH - x ) * 2)) / CREATION_ZONE_HEIGHT );
       else
         heading = 2 * pi;
       break;
 
     case RIGHT:
-      y = random( GAMESPACE_ORIGIN_Y, GAMESPACE_HEIGHT );
-      x = GAMESPACE_WIDTH;
-      if( y < GAMESPACE_HEIGHT / 2 )
-        heading = pi - atan( GAMESPACE_WIDTH / ( GAMESPACE_HEIGHT - 2*y ) );
-      else if ( y > GAMESPACE_HEIGHT / 2 )
-        heading = atan( GAMESPACE_WIDTH / ( GAMESPACE_HEIGHT - (( GAMESPACE_HEIGHT - y ) * 2)) );
+      y = random( CREATION_ZONE_ORIGIN_Y, CREATION_ZONE_HEIGHT );
+      x = CREATION_ZONE_WIDTH;
+      if( y < CREATION_ZONE_HEIGHT / 2 )
+        heading = pi - atan( CREATION_ZONE_WIDTH / ( CREATION_ZONE_HEIGHT - 2*y ) );
+      else if ( y > CREATION_ZONE_HEIGHT / 2 )
+        heading = atan( CREATION_ZONE_WIDTH / ( CREATION_ZONE_HEIGHT - (( CREATION_ZONE_HEIGHT - y ) * 2)) );
       else
         heading = 1.5 * pi;
       break;
 
     case DOWN:
-      x = random( GAMESPACE_ORIGIN_X, GAMESPACE_WIDTH );
-      y = GAMESPACE_HEIGHT;
-      if ( x < GAMESPACE_WIDTH / 2 )
-        heading = ( 1.5 * pi ) + atan( GAMESPACE_HEIGHT / ( GAMESPACE_WIDTH - 2*x) );
-      else if ( x > GAMESPACE_WIDTH / 2 )
-        heading = atan( ( GAMESPACE_WIDTH - (( GAMESPACE_WIDTH - x ) * 2)) / GAMESPACE_HEIGHT );
+      x = random( CREATION_ZONE_ORIGIN_X, CREATION_ZONE_WIDTH );
+      y = CREATION_ZONE_HEIGHT;
+      if ( x < CREATION_ZONE_WIDTH / 2 )
+        heading = ( 1.5 * pi ) + atan( CREATION_ZONE_HEIGHT / ( CREATION_ZONE_WIDTH - 2*x) );
+      else if ( x > CREATION_ZONE_WIDTH / 2 )
+        heading = atan( ( CREATION_ZONE_WIDTH - (( CREATION_ZONE_WIDTH - x ) * 2)) / CREATION_ZONE_HEIGHT );
       else
         heading = 0;
       break;
 
     case LEFT:
-      y = random( GAMESPACE_ORIGIN_Y, GAMESPACE_HEIGHT );
-      x = GAMESPACE_ORIGIN_X;
-      if( y < GAMESPACE_HEIGHT / 2 )
-        heading = ( 1.5 * pi ) - atan( ( GAMESPACE_HEIGHT - 2*y ) / GAMESPACE_WIDTH );
-      else if ( y > GAMESPACE_HEIGHT / 2 )
-        heading = ( 1.5 * pi ) + atan( ( GAMESPACE_HEIGHT - (( GAMESPACE_HEIGHT - y ) * 2)) / GAMESPACE_WIDTH );
+      y = random( CREATION_ZONE_ORIGIN_Y, CREATION_ZONE_HEIGHT );
+      x = CREATION_ZONE_ORIGIN_X;
+      if( y < CREATION_ZONE_HEIGHT / 2 )
+        heading = ( 1.5 * pi ) - atan( ( CREATION_ZONE_HEIGHT - 2*y ) / CREATION_ZONE_WIDTH );
+      else if ( y > CREATION_ZONE_HEIGHT / 2 )
+        heading = ( 1.5 * pi ) + atan( ( CREATION_ZONE_HEIGHT - (( CREATION_ZONE_HEIGHT - y ) * 2)) / CREATION_ZONE_WIDTH );
       else
         heading = 2.5 * pi;
       break;
   } 
 
-  MovingRenderablePolygon asteroid = MovingRenderablePolygon(generatePolygon( { x, y }, ASTEROID_RADIUS, ASTEROID_VERTS ));
-  asteroid.heading = heading;
+  auto asteroid = std::make_unique<Asteroid>(Polygon( { x, y }, ASTEROID_RADIUS, ASTEROID_VERTS ));
+  asteroid->heading = heading;
+  asteroid->velocity = 5;
   return asteroid;
 }
 
-std::vector<MovingRenderablePolygon> generateAsteroids( int numAsteroids ) {
-  std::vector<MovingRenderablePolygon> asteroids;
+std::vector<std::unique_ptr<Asteroid>> generateAsteroids( int numAsteroids ) {
+  std::vector<std::unique_ptr<Asteroid>> asteroids;
   for( int i = 0; i < numAsteroids; i++ ) {
     asteroids.push_back(generateAsteroid());
   }
   return asteroids;
 }
 
-std::vector<MovingRenderablePolygon> updateAsteroids( std::vector<MovingRenderablePolygon> asteroids ) {
-  std::vector<MovingRenderablePolygon> updatedAsteroids;
-  for( auto it = asteroids.begin(); it != asteroids.end(); it++ ) {
-    if( within( *it, gameSpace )) {
-      MovingRenderablePolygon updatedAsteroid(translate2D( rotate2D( *it, 0.002, true ), 2 ));
-      updatedAsteroids.push_back( updatedAsteroid );
-    } 
-    else {
-      updatedAsteroids.push_back( generateAsteroid() );
-      //std::cout << "New Asteroid." << std::endl;
-    }
-  }
-  return updatedAsteroids;
-}
-
-bool detectCollision( Polygon p1, Polygon p2 ) {
+bool detectCollision( const Polygon& p1, const Polygon& p2 ) {
   // Create a list of vectors perpendicular to polygon edges.
   std::vector<Point> normals;
-  for ( int i = 0; i < p1.points.size()-1; i++ ) {
-    Point edge = p1.points[i+1] - p1.points[i];
+  for ( int i = 0; i < p1.points().size()-1; i++ ) {
+    Point edge = p1.points()[i+1] - p1.points()[i];
     Point normal = { edge.y, -edge.x };
     normals.push_back(normal);
   }
-  for ( int i = 0; i < p2.points.size()-1; i++ ) {
-    Point edge = p2.points[i+1] - p2.points[i];
+  for ( int i = 0; i < p2.points().size()-1; i++ ) {
+    Point edge = p2.points()[i+1] - p2.points()[i];
     Point normal = { edge.y, -edge.x };
     normals.push_back(normal);
   }
@@ -227,10 +167,10 @@ bool detectCollision( Polygon p1, Polygon p2 ) {
   // Project vertices from polygons onto the perpendicular vectors (normals);
   for( auto n = normals.begin(); n != normals.end(); n++ ) {
     // P1
-    double dp = dotProduct(*n, p1.points[0]);
+    double dp = dotProduct(*n, p1.points()[0]);
     double p1Min = dp;
     double p1Max = dp;
-    for( auto i = p1.points.begin(); i != p1.points.end(); i++ ) {
+    for( auto i = p1.points().begin(); i != p1.points().end(); i++ ) {
       dp = dotProduct(*i, *n);
       if( dp < p1Min ) {
         p1Min = dp;
@@ -241,10 +181,10 @@ bool detectCollision( Polygon p1, Polygon p2 ) {
     }
 
     // P2
-    dp = dotProduct(*n, p2.points[0]);
+    dp = dotProduct(*n, p2.points()[0]);
     double p2Min = dp;
     double p2Max = dp;
-    for( auto i = p2.points.begin(); i != p2.points.end(); i++ ) {
+    for( auto i = p2.points().begin(); i != p2.points().end(); i++ ) {
       dp = dotProduct(*i, *n);
       if( dp < p2Min ) {
         p2Min = dp;
@@ -266,10 +206,27 @@ bool detectCollision( Polygon p1, Polygon p2 ) {
   return true;
 }
 
-void detectCollisions( std::vector<MovingRenderablePolygon> objects ) {
-  for( int i = 0; i < objects.size(); i++ ) {
-    for( int j = i + 1; j < objects.size(); j++ ) {
-      std::cout << " Colliding: " << detectCollision( objects[i], objects[j] ) << std::endl;
+void updateAsteroids( std::vector<std::unique_ptr<Asteroid>>& asteroids ) {
+  for( auto it = asteroids.begin(); it != asteroids.end(); it++ ) {
+    if( within( **it, gameSpace )) {
+      (*it)->move();
+      (*it)->rotate(true);
+
+    } 
+    else {
+      // delete asteroid
+      asteroids.erase(it);
+      asteroids.push_back( generateAsteroid() );
+    }
+  }
+  for( int i = 0; i < asteroids.size(); i++ ) {
+    for( int j = i + 1; j < asteroids.size(); j++ ) {
+      if( detectCollision( *asteroids[i], *asteroids[j] )) {
+        asteroids[j]->heading = asteroids[j]->heading + pi;
+        translate2D(*asteroids[j], asteroids[j]->heading, 5);
+        asteroids[i]->heading = asteroids[i]->heading + pi;
+        translate2D(*asteroids[i], asteroids[i]->heading, 5);
+      }
     }
   }
 }
@@ -292,10 +249,10 @@ int main( int argc, char* args[] ) {
       { SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 }
     };
 
-    MovingRenderablePolygon triangle;
-    triangle.points = points;
+    auto triangle = MovingRenderablePolygon();
+    triangle.setPoints(points);
 
-    std::vector<MovingRenderablePolygon> asteroids = generateAsteroids( INIT_ASTEROIDS );
+    std::vector<std::unique_ptr<Asteroid>> asteroids = generateAsteroids( INIT_ASTEROIDS );
 
     double angle = 0.0;
     double angleDelta = 0.08;
@@ -305,7 +262,7 @@ int main( int argc, char* args[] ) {
 
     const Uint8 *keystate = NULL;
 
-    std::vector<MovingRenderablePolygon> objectsToRender;
+    std::vector<Renderable*> objectsToRender;
     
     Timer fpsTimer;
     Timer capTimer;
@@ -349,19 +306,20 @@ int main( int argc, char* args[] ) {
       }
 
       if( rotate ) {
-        triangle = rotate2D( triangle, angle );
+        rotate2D( triangle, angle );
       }
       if( move ) {
-        triangle = translate2D( triangle, 10, screenBorder );
+        translate2D( triangle, 10, screenBorder );
       }
 
-      asteroids = updateAsteroids( asteroids );
+      updateAsteroids( asteroids );
 
-      objectsToRender.push_back( triangle );
-      objectsToRender.insert( objectsToRender.end(), asteroids.begin(), asteroids.end() );
+      objectsToRender.push_back( &triangle );
+      for( auto i = asteroids.begin(); i != asteroids.end(); i++ ) {
+        objectsToRender.push_back((*i).get());
+      }
 
-      detectCollisions( objectsToRender );
-
+      //detectCollisions( objectsToRender );
       renderFrame( gRenderer, objectsToRender );
       countedFrames++;
       int frameTicks = capTimer.getTicks();

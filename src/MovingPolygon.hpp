@@ -1,7 +1,7 @@
 #ifndef MOVINGPOLYGON_H
 #define MOVINGPOLYGON_H
 
-#include "Polygon.h"
+#include "Polygon.hpp"
 
 class MovingPolygon : public Polygon {
   public:
@@ -10,7 +10,7 @@ class MovingPolygon : public Polygon {
     double rotation = 0;
 
     MovingPolygon() {}
-    MovingPolygon( Polygon poly ) : Polygon { poly.points } {}
+    MovingPolygon( Polygon poly ) : Polygon { poly.points() } {}
 };
 
 #endif
