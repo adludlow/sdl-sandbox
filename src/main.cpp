@@ -87,6 +87,61 @@ void renderFrame( SDL_Renderer* renderer, std::vector<Renderable*> objectsToRend
   SDL_RenderPresent( renderer );
 }
 
+bool detectCollision( const Polygon& p1, const Polygon& p2 ) {
+  // Create a list of vectors perpendicular to polygon edges.
+  std::vector<Point> normals;
+  for ( int i = 0; i < p1.points().size()-1; i++ ) {
+    Point edge = p1.points()[i+1] - p1.points()[i];
+    Point normal = { edge.y, -edge.x };
+    normals.push_back(normal);
+  }
+  for ( int i = 0; i < p2.points().size()-1; i++ ) {
+    Point edge = p2.points()[i+1] - p2.points()[i];
+    Point normal = { edge.y, -edge.x };
+    normals.push_back(normal);
+  }
+  // Project vertices from polygons onto the perpendicular vectors (normals);
+  for( auto n = normals.begin(); n != normals.end(); n++ ) {
+    // P1
+    double dp = dotProduct(*n, p1.points()[0]);
+    double p1Min = dp;
+    double p1Max = dp;
+    for( int i = 0; i < p1.points().size(); i++ ) {
+      dp = dotProduct(*n, p1.points()[i]);
+      if( dp < p1Min ) {
+        p1Min = dp;
+      }
+      if( dp > p1Max ) {
+        p1Max = dp;
+      }
+    }
+
+    // P2
+    dp = dotProduct(*n, p2.points()[0]);
+    double p2Min = dp;
+    double p2Max = dp;
+    for( int i = 0; i < p2.points().size(); i++ ) {
+      dp = dotProduct(*n, p2.points()[i]);
+      if( dp < p2Min ) {
+        p2Min = dp;
+      }
+      if( dp > p2Max ) {
+        p2Max = dp;
+      }
+    }
+    double interval;
+    if( p1Min < p2Min ) {
+      interval = p2Min - p1Max;
+    } else {
+      interval = p1Min - p2Max;
+    }
+    if( interval > 1 ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 std::unique_ptr<Asteroid> generateAsteroid() {
   double x, y, heading = 0;
   int side = round( random( 0, 3 ) );
@@ -142,69 +197,28 @@ std::unique_ptr<Asteroid> generateAsteroid() {
   return asteroid;
 }
 
-std::vector<std::unique_ptr<Asteroid>> generateAsteroids( int numAsteroids ) {
-  std::vector<std::unique_ptr<Asteroid>> asteroids;
-  for( int i = 0; i < numAsteroids; i++ ) {
-    asteroids.push_back(generateAsteroid());
+bool collidingWithObject( const Polygon& obj, const std::vector<Polygon*>& objs ) {
+  for( auto o = objs.begin(); o != objs.end(); o++ ) {
+    if( detectCollision( obj, **o ) ) {
+      return true;
+    }
   }
-  return asteroids;
+  return false;
 }
 
-bool detectCollision( const Polygon& p1, const Polygon& p2 ) {
-  // Create a list of vectors perpendicular to polygon edges.
-  std::vector<Point> normals;
-  for ( int i = 0; i < p1.points().size()-1; i++ ) {
-    Point edge = p1.points()[i+1] - p1.points()[i];
-    Point normal = { edge.y, -edge.x };
-    normals.push_back(normal);
+std::vector<std::unique_ptr<Asteroid>> generateAsteroids( int numAsteroids ) {
+  std::vector<std::unique_ptr<Asteroid>> asteroids;
+  std::vector<Polygon*> tmpAsteroids;
+  for( int i = 0; i < numAsteroids; i++ ) {
+    std::unique_ptr<Asteroid> newAsteroid(generateAsteroid());
+    while( collidingWithObject( *newAsteroid, tmpAsteroids ) ) {
+      std::cout << "Collision detected. Creating new asteroid." << std::endl;
+      newAsteroid = generateAsteroid();
+    }
+    tmpAsteroids.push_back(newAsteroid.get());
+    asteroids.push_back(std::move(newAsteroid));
   }
-  for ( int i = 0; i < p2.points().size()-1; i++ ) {
-    Point edge = p2.points()[i+1] - p2.points()[i];
-    Point normal = { edge.y, -edge.x };
-    normals.push_back(normal);
-  }
-
-  // Project vertices from polygons onto the perpendicular vectors (normals);
-  for( auto n = normals.begin(); n != normals.end(); n++ ) {
-    // P1
-    double dp = dotProduct(*n, p1.points()[0]);
-    double p1Min = dp;
-    double p1Max = dp;
-    for( int i = 0; i < p1.points().size(); i++ ) {
-      dp = dotProduct(*n, p1.points()[i]);
-      if( dp < p1Min ) {
-        p1Min = dp;
-      }
-      if( dp > p1Max ) {
-        p1Max = dp;
-      }
-    }
-
-    // P2
-    dp = dotProduct(*n, p2.points()[0]);
-    double p2Min = dp;
-    double p2Max = dp;
-    for( int i = 0; i < p2.points().size(); i++ ) {
-      dp = dotProduct(*n, p2.points()[i]);
-      if( dp < p2Min ) {
-        p2Min = dp;
-      }
-      if( dp > p2Max ) {
-        p2Max = dp;
-      }
-    }
-    double interval;
-    if( p1Min < p2Min ) {
-      interval = p2Min - p1Max;
-    } else {
-      interval = p1Min - p2Max;
-    }
-    //std::cout << p1Min << " " << p1Max << ", " << p2Min << " " << p2Max << std::endl;
-    if( interval > 1 ) {
-      return false;
-    }
-  }
-  return true;
+  return asteroids;
 }
 
 void updateAsteroids( std::vector<std::unique_ptr<Asteroid>>& asteroids ) {

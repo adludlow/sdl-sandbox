@@ -20,8 +20,8 @@ const int CREATION_ZONE_ORIGIN_Y = 200;
 const int CREATION_ZONE_WIDTH = SCREEN_WIDTH - 200;
 const int CREATION_ZONE_HEIGHT = SCREEN_HEIGHT - 200;
 
-const int INIT_ASTEROIDS = 6;
-const int MAX_ASTEROIDS = 6;
+const int INIT_ASTEROIDS = 15;
+const int MAX_ASTEROIDS = 15;
 const int ASTEROID_RADIUS = 50;
 const int ASTEROID_VERTS = 13;
 
