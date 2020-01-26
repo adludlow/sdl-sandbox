@@ -138,7 +138,7 @@ std::unique_ptr<Asteroid> generateAsteroid() {
 
   auto asteroid = std::make_unique<Asteroid>(Polygon( { x, y }, ASTEROID_RADIUS, ASTEROID_VERTS ));
   asteroid->heading = heading;
-  asteroid->velocity = 5;
+  asteroid->velocity = 1;
   return asteroid;
 }
 
@@ -170,8 +170,8 @@ bool detectCollision( const Polygon& p1, const Polygon& p2 ) {
     double dp = dotProduct(*n, p1.points()[0]);
     double p1Min = dp;
     double p1Max = dp;
-    for( auto i = p1.points().begin(); i != p1.points().end(); i++ ) {
-      dp = dotProduct(*i, *n);
+    for( int i = 0; i < p1.points().size(); i++ ) {
+      dp = dotProduct(*n, p1.points()[i]);
       if( dp < p1Min ) {
         p1Min = dp;
       }
@@ -184,8 +184,8 @@ bool detectCollision( const Polygon& p1, const Polygon& p2 ) {
     dp = dotProduct(*n, p2.points()[0]);
     double p2Min = dp;
     double p2Max = dp;
-    for( auto i = p2.points().begin(); i != p2.points().end(); i++ ) {
-      dp = dotProduct(*i, *n);
+    for( int i = 0; i < p2.points().size(); i++ ) {
+      dp = dotProduct(*n, p2.points()[i]);
       if( dp < p2Min ) {
         p2Min = dp;
       }
@@ -199,6 +199,7 @@ bool detectCollision( const Polygon& p1, const Polygon& p2 ) {
     } else {
       interval = p1Min - p2Max;
     }
+    //std::cout << p1Min << " " << p1Max << ", " << p2Min << " " << p2Max << std::endl;
     if( interval > 1 ) {
       return false;
     }

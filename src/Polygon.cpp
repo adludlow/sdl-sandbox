@@ -38,8 +38,8 @@ void Polygon::setCentroid(const Point& centroid) {
   centroid_ = centroid;
 }
 
-void Polygon::print() {
-  for( int i = 0; i < points_.size(); i++ ) {
-    std::cout << i << " " << points_[i].x << " " << points_[i].y << std::endl;
+void Polygon::print() const {
+  for( auto it = points_.begin(); it != points_.end(); it++ ) {
+    it->print();
   }
 }

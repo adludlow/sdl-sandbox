@@ -9,7 +9,7 @@
 class Polygon {
   public:
     Polygon() : points_(std::vector<Point>()) {}
-    Polygon( std::vector<Point> points ) : points_( points ) {}
+    Polygon( const std::vector<Point>& points ) : points_( points ) {}
     Polygon( Point center, double radius, int numVerts );
 
     std::vector<Point> points() const;
@@ -17,7 +17,7 @@ class Polygon {
     Point centroid() const;
     void setCentroid(const Point& centroid);
 
-    void print();
+    void print() const;
 
   private:
     std::vector<Point> points_;
